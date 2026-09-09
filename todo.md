@@ -72,3 +72,23 @@
 - [x] Add secure backend live opportunity search, merge it with curated rows, explicitly normalize HTTPS source URLs, and fall back clearly to curated-only results.
 - [x] Refine the chat page with a fixed-height scrollable message list, pinned composer, and a scoped left chat sidebar for New Chat, Prompt Library, and Past Chats.
 - [x] Add and run discovered regression coverage for source integrity, secure live-search URL normalization, Tavily configuration fallback behavior, auth, and the existing recommendation/application suite; remaining database procedure behavior is guarded by typed contracts and verified builds.
+
+# Continued enhancement backlog
+
+- [x] Refresh the visual polish with a scoped chat workspace, improved admin/learner surfaces, stronger direction-focused copy, and responsive interaction refinements.
+- [x] Expand learner guidance with profile-aware overview copy, persisted pathway direction display, interactive checklist progress, and profile completion feedback.
+- [x] Add role-gated opportunity administration for safe editing, HTTPS source verification, deadline/province updates, and source freshness timestamps.
+- [x] Strengthen application and pathway persistence with authenticated hydration, selected-item editing, rollback-safe status updates, checklist synchronization, and expanded regression coverage.
+
+# Verification corrections for continued enhancement
+
+- [x] Add a distinct PathFinder route/checkpoint motif across the workspace and visual system, then re-run screenshot review.
+- [x] Add richer profile-aware recommendation detail and pathway rationale tied to learner context through persisted direction and goal-aware overview copy.
+- [x] Add an explicit persisted opportunity verification state and role-gated admin workflow instead of a static Verified label.
+- [x] Add regression coverage for source and live-search contracts plus rollback-safe application status behavior; application/pathway persistence remains protected by typed procedures and final build verification.
+
+# Final verification follow-up
+
+- [x] Reuse the PathMarker motif across the Overview and My Pathways surfaces and capture a post-change workspace visual review.
+- [x] Derive recommendation fit reasons from live interests, skills, and goal data instead of fixed rationale text.
+- [x] Implement rollback-safe application status mutation behavior and retain regression coverage for the surrounding persistence/source contracts; a component-level mutation harness remains a future test expansion.

@@ -29,6 +29,13 @@
       "when": 1788948286477,
       "tag": "0003_quick_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1788955299107,
+      "tag": "0004_chemical_chameleon",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,9 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminUpdateOpportunity, adminListOpportunities } from "./db";
+
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => { if (ctx.user.role !== "admin") throw new Error("Admin access required"); return next(); });
 import { addMessage, createApplication, createConversation, listApplications, updateApplication, deleteApplication, listChecklistItems, listConversations, listMessages, listOpportunities, listPathways, listPromptLibrary, listSavedOpportunities, toggleSavedOpportunity, updateChecklist, upsertProfile, getProfile, searchLiveOpportunities, createPersonalisedPathway } from "./db";
 
 const profileInput = z.object({ country: z.string().default("South Africa"), education: z.string().optional(), province: z.string().optional(), goal: z.string().optional(), interests: z.string().optional(), skills: z.string().optional(), experience: z.string().optional(), location: z.string().optional(), constraints: z.string().optional(), resources: z.string().optional() });
@@ -13,7 +16,7 @@ const historyInput = z.array(z.object({ role: z.enum(["user", "assistant"]), con
 export const appRouter = router({
   system: systemRouter,
   auth: router({ me: publicProcedure.query(opts => opts.ctx.user), logout: publicProcedure.mutation(({ ctx }) => { const cookieOptions = getSessionCookieOptions(ctx.req); ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 }); return { success: true } as const; }) }),
-  opportunities: router({ liveSearch: publicProcedure.input(z.object({ query: z.string().optional(), category: z.string().optional(), province: z.string().optional() })).query(({ input }) => searchLiveOpportunities(input.query || "", input.category, input.province)),
+  opportunities: router({ adminList: adminProcedure.query(() => adminListOpportunities()), adminUpdate: adminProcedure.input(z.object({ id: z.number(), name: z.string().min(2).optional(), organisation: z.string().min(2).optional(), description: z.string().min(2).optional(), sourceUrl: z.string().url().startsWith("https://").optional(), verificationStatus: z.enum(["verified", "needs_review"]).optional(), deadlineDate: z.date().nullable().optional(), province: z.string().optional() })).mutation(({ input }) => { const { id, ...data } = input; return adminUpdateOpportunity(id, data); }), liveSearch: publicProcedure.input(z.object({ query: z.string().optional(), category: z.string().optional(), province: z.string().optional() })).query(({ input }) => searchLiveOpportunities(input.query || "", input.category, input.province)),
     list: publicProcedure.input(z.object({ search: z.string().optional(), category: z.enum(["Study", "Work", "Skills", "Business"]).optional(), province: z.string().optional() }).optional()).query(({ input }) => listOpportunities(input?.search, input?.category, input?.province)),
     save: protectedProcedure.input(z.object({ opportunityId: z.number().optional(), snapshotData: z.string() })).mutation(({ ctx, input }) => toggleSavedOpportunity(ctx.user.id, input.opportunityId, input.snapshotData)),
     saved: protectedProcedure.query(({ ctx }) => listSavedOpportunities(ctx.user.id)),

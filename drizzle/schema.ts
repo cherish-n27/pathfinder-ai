@@ -25,7 +25,7 @@ export const pathwayChecklistItems = mysqlTable("pathwayChecklistItems", {
 });
 
 export const opportunities = mysqlTable("opportunities", {
-  id: int("id").autoincrement().primaryKey(), category: mysqlEnum("category", ["Study", "Work", "Skills", "Business"]).notNull(), name: varchar("name", { length: 220 }).notNull(), organisation: varchar("organisation", { length: 180 }).notNull(), description: text("description").notNull(), keyRequirements: text("keyRequirements"), traits: text("traits"), province: varchar("province", { length: 80 }), deadlineDate: timestamp("deadlineDate"), sourceUrl: text("sourceUrl").notNull(), sourceUpdatedAt: timestamp("sourceUpdatedAt").defaultNow().notNull(),
+  id: int("id").autoincrement().primaryKey(), category: mysqlEnum("category", ["Study", "Work", "Skills", "Business"]).notNull(), name: varchar("name", { length: 220 }).notNull(), organisation: varchar("organisation", { length: 180 }).notNull(), description: text("description").notNull(), keyRequirements: text("keyRequirements"), traits: text("traits"), province: varchar("province", { length: 80 }), deadlineDate: timestamp("deadlineDate"), sourceUrl: text("sourceUrl").notNull(), verificationStatus: mysqlEnum("verificationStatus", ["verified", "needs_review"]).default("needs_review").notNull(), sourceUpdatedAt: timestamp("sourceUpdatedAt").defaultNow().notNull(),
 });
 
 export const savedOpportunities = mysqlTable("savedOpportunities", {
