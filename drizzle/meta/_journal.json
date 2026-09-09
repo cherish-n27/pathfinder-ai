@@ -15,6 +15,13 @@
       "when": 1788421739985,
       "tag": "0001_sudden_wildside",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1788938178436,
+      "tag": "0002_chemical_ogun",
+      "breakpoints": true
     }
   ]
 }
