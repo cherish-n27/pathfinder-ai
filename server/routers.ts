@@ -4,35 +4,35 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, createApplication, createConversation, listApplications, listChecklistItems, listConversations, listMessages, listOpportunities, listPathways, listPromptLibrary, listSavedOpportunities, saveOpportunity, updateChecklist, upsertProfile } from "./db";
+import { addMessage, createApplication, createConversation, listApplications, updateApplication, deleteApplication, listChecklistItems, listConversations, listMessages, listOpportunities, listPathways, listPromptLibrary, listSavedOpportunities, toggleSavedOpportunity, updateChecklist, upsertProfile, getProfile, searchLiveOpportunities, createPersonalisedPathway } from "./db";
 
-const profileInput = z.object({ country: z.string().default("South Africa"), education: z.string().optional(), province: z.string().optional(), goal: z.string().optional(), interests: z.string().optional(), skills: z.string().optional(), location: z.string().optional(), constraints: z.string().optional(), resources: z.string().optional() });
+const profileInput = z.object({ country: z.string().default("South Africa"), education: z.string().optional(), province: z.string().optional(), goal: z.string().optional(), interests: z.string().optional(), skills: z.string().optional(), experience: z.string().optional(), location: z.string().optional(), constraints: z.string().optional(), resources: z.string().optional() });
 const applicationInput = z.object({ title: z.string().min(2), organisation: z.string().min(2), type: z.enum(["Study", "Work", "Skills", "Business", "Other"]), dateApplied: z.date().optional(), deadlineDate: z.date().optional(), status: z.enum(["Not started", "Applied", "Interview", "Waiting", "Accepted", "Not this time", "Withdrawn"]).optional(), notes: z.string().optional(), linkedPathwayId: z.number().optional(), linkedOpportunityId: z.number().optional() });
 const historyInput = z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() }));
 
 export const appRouter = router({
   system: systemRouter,
   auth: router({ me: publicProcedure.query(opts => opts.ctx.user), logout: publicProcedure.mutation(({ ctx }) => { const cookieOptions = getSessionCookieOptions(ctx.req); ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 }); return { success: true } as const; }) }),
-  opportunities: router({
+  opportunities: router({ liveSearch: publicProcedure.input(z.object({ query: z.string().optional(), category: z.string().optional(), province: z.string().optional() })).query(({ input }) => searchLiveOpportunities(input.query || "", input.category, input.province)),
     list: publicProcedure.input(z.object({ search: z.string().optional(), category: z.enum(["Study", "Work", "Skills", "Business"]).optional(), province: z.string().optional() }).optional()).query(({ input }) => listOpportunities(input?.search, input?.category, input?.province)),
-    save: protectedProcedure.input(z.object({ opportunityId: z.number().optional(), snapshotData: z.string() })).mutation(({ ctx, input }) => saveOpportunity(ctx.user.id, input.opportunityId, input.snapshotData)),
+    save: protectedProcedure.input(z.object({ opportunityId: z.number().optional(), snapshotData: z.string() })).mutation(({ ctx, input }) => toggleSavedOpportunity(ctx.user.id, input.opportunityId, input.snapshotData)),
     saved: protectedProcedure.query(({ ctx }) => listSavedOpportunities(ctx.user.id)),
   }),
   prompts: router({ list: publicProcedure.query(() => listPromptLibrary()) }),
-  profile: router({ save: protectedProcedure.input(profileInput).mutation(({ ctx, input }) => upsertProfile(ctx.user.id, input)) }),
+  profile: router({ get: protectedProcedure.query(({ ctx }) => getProfile(ctx.user.id)), save: protectedProcedure.input(profileInput).mutation(({ ctx, input }) => upsertProfile(ctx.user.id, input)) }),
   conversations: router({
     list: protectedProcedure.query(({ ctx }) => listConversations(ctx.user.id)),
     create: protectedProcedure.input(z.object({ title: z.string().optional() }).optional()).mutation(({ ctx, input }) => createConversation(ctx.user.id, input?.title)),
     messages: protectedProcedure.input(z.object({ conversationId: z.number() })).query(({ ctx, input }) => listMessages(ctx.user.id, input.conversationId)),
     addMessage: protectedProcedure.input(z.object({ conversationId: z.number(), sender: z.enum(["user", "assistant"]), message: z.string().min(1) })).mutation(({ ctx, input }) => addMessage(ctx.user.id, input.conversationId, input.sender, input.message)),
   }),
-  applications: router({ list: protectedProcedure.query(({ ctx }) => listApplications(ctx.user.id)), create: protectedProcedure.input(applicationInput).mutation(({ ctx, input }) => createApplication(ctx.user.id, input)) }),
+  applications: router({ list: protectedProcedure.query(({ ctx }) => listApplications(ctx.user.id)), create: protectedProcedure.input(applicationInput).mutation(({ ctx, input }) => createApplication(ctx.user.id, input)), update: protectedProcedure.input(applicationInput.partial().extend({ id: z.number() })).mutation(({ ctx, input }) => { const { id, ...data } = input; return updateApplication(ctx.user.id, id, data); }), remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ ctx, input }) => deleteApplication(ctx.user.id, input.id)) }),
   pathways: router({ list: protectedProcedure.query(({ ctx }) => listPathways(ctx.user.id)), checklist: protectedProcedure.input(z.object({ pathwayId: z.number() })).query(({ ctx, input }) => listChecklistItems(ctx.user.id, input.pathwayId)), toggleChecklist: protectedProcedure.input(z.object({ itemId: z.number(), isComplete: z.number().min(0).max(1) })).mutation(({ ctx, input }) => updateChecklist(ctx.user.id, input.itemId, input.isComplete)) }),
   guide: router({
     respond: protectedProcedure.input(z.object({ profile: z.string(), history: historyInput, message: z.string(), conversationId: z.number().optional() })).mutation(async ({ ctx, input }) => {
       if (input.conversationId) await addMessage(ctx.user.id, input.conversationId, "user", input.message);
       const response = await invokeLLM({ messages: [{ role: "system", content: "You are PathFinder, a warm South African youth career guide. Ask only one question at a time. Use Grade 10 reading level, stay practical and encouraging, never diagnose, never guarantee outcomes, and never invent an institution or opportunity. Recommend only grounded directions and explain why. Always finish with one small next action when enough context exists." }, { role: "user", content: `Profile context: ${input.profile}\nConversation so far: ${JSON.stringify(input.history)}\nNew message: ${input.message}` }] });
-      const content = response.choices?.[0]?.message?.content; const message = typeof content === "string" ? content : "I’m listening. Tell me a little more about what you want to explore."; if (input.conversationId) await addMessage(ctx.user.id, input.conversationId, "assistant", message); return { message };
+      const content = response.choices?.[0]?.message?.content; const message = typeof content === "string" ? content : "I’m listening. Tell me a little more about what you want to explore."; if (input.conversationId) await addMessage(ctx.user.id, input.conversationId, "assistant", message); const shouldCreatePathway = input.message.trim().length >= 12 && input.history.length >= 1; const pathway = shouldCreatePathway ? await createPersonalisedPathway(ctx.user.id, input.profile, input.message, message) : null; return { message, pathway };
     }),
   }),
   drafts: router({

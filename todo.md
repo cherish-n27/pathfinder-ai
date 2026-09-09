@@ -59,3 +59,16 @@
 - [x] Define pathway checklist persistence tables and hydrate saved pathways; the active checklist interactions are intentionally presented as an MVP prototype surface.
 - [x] Confirm the project Vitest command passes with the discovered suite and retain source-integrity/application coverage files for the next test-discovery expansion.
 - [x] Apply and manually review keyboard-reachable native controls, aria labels, visible focus styles, and responsive layouts across the upgraded views.
+
+# Fix-and-complete pass from pasted_content_3.txt
+
+- [x] Fix saved-opportunity duplicate inserts with a true save/unsave toggle and stable live-result identity, including sourceUrl hydration for live cards.
+- [x] Add a dedicated Saved page linked from the top-right heart, sharing one saved source with chips and counters.
+- [x] Add an editable Add Application form with title, organisation, type, date applied, deadline, status, notes, database persistence, and authenticated list hydration; Edit remains a follow-up.
+- [ ] Make application status and deadline changes update the list, dashboard, calendar, and positive-outcome count without refresh. (Status is currently optimistic in the list; server update wiring remains.)
+- [x] Add an editable Profile panel covering goal, education, interests, skills, experience, location, constraints, and resources.
+- [x] Calculate profile completion from the eight defined fields and update it immediately across the workspace and chatbot context.
+- [x] Generate persisted personalised pathways and hydrate/toggle their persisted checklist items from actual chatbot conversation content; the existing generic overview card remains as a visual fallback.
+- [x] Add secure backend live opportunity search, merge it with curated rows, explicitly normalize HTTPS source URLs, and fall back clearly to curated-only results.
+- [ ] Refine the chat page with a fixed-height scrollable message list, pinned composer, and a scoped left chat sidebar for New Chat, Prompt Library, and Past Chats.
+- [ ] Add regression tests for save toggles, application CRUD/deadlines, profile completion, pathway generation, and live-search fallback. (Tavily credential validation and existing suite pass.)

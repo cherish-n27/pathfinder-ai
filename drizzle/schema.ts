@@ -5,7 +5,7 @@ export const users = mysqlTable("users", {
 });
 
 export const profiles = mysqlTable("profiles", {
-  id: int("id").autoincrement().primaryKey(), userId: int("userId").notNull(), country: varchar("country", { length: 80 }).default("South Africa"), education: varchar("education", { length: 80 }), province: varchar("province", { length: 80 }), goal: varchar("goal", { length: 120 }), interests: text("interests"), skills: text("skills"), location: varchar("location", { length: 120 }), constraints: text("constraints"), resources: text("resources"), createdAt: timestamp("createdAt").defaultNow().notNull(), updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  id: int("id").autoincrement().primaryKey(), userId: int("userId").notNull(), country: varchar("country", { length: 80 }).default("South Africa"), education: varchar("education", { length: 80 }), province: varchar("province", { length: 80 }), goal: varchar("goal", { length: 120 }), interests: text("interests"), skills: text("skills"), experience: text("experience"), location: varchar("location", { length: 120 }), constraints: text("constraints"), resources: text("resources"), createdAt: timestamp("createdAt").defaultNow().notNull(), updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export const conversations = mysqlTable("conversations", {
