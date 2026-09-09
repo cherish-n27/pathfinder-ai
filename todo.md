@@ -92,3 +92,10 @@
 - [x] Reuse the PathMarker motif across the Overview and My Pathways surfaces and capture a post-change workspace visual review.
 - [x] Derive recommendation fit reasons from live interests, skills, and goal data instead of fixed rationale text.
 - [x] Implement rollback-safe application status mutation behavior and retain regression coverage for the surrounding persistence/source contracts; a component-level mutation harness remains a future test expansion.
+
+# Responsive layout fix
+
+- [x] Make the desktop chat workspace use the full available viewport width instead of a narrow centered cluster.
+- [x] Preserve the chat three-panel layout near a 20/55/25 proportional split while allowing panels to grow with the viewport.
+- [x] Normalize workspace and profile containers to remove inconsistent desktop white space and improve mobile/tablet behavior.
+- [x] Run desktop and mobile visual checks plus typecheck before saving the layout checkpoint.
