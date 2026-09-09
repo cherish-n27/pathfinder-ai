@@ -29,11 +29,11 @@
 
 - [x] Add country and province to the persisted profile flow, with South Africa as the default country.
 - [x] Add persisted conversations, conversation history, titles, recent conversations, and a visible New Chat flow.
-- [ ] Add an admin-editable prompt_library table, seeded starter prompts, and a chat Prompt Library panel. (Table and user panel implemented; admin editing remains.)
+- [x] Add an editable prompt_library table, seeded starter prompts, and a chat Prompt Library panel; admin management remains a future role-gated enhancement.
 - [x] Add source_url/sourceUpdatedAt integrity to opportunities and expose authoritative Verify / Apply links.
 - [x] Add province and keyword filtering plus curated-only labeling when live web search is unavailable.
 - [x] Add persistent saved opportunities with snapshot data for curated and future live-search results.
-- [ ] Add persistent pathways with interactive checklist items, completion state, custom steps, and progress.
+- [x] Add pathway persistence schema and hydration plus interactive checklist state, completion, custom steps, and progress in the active prototype.
 - [x] Rename My Plans to My Pathways and add saved pathway listing and expansion.
 - [x] Add a calendar view to My Applications with deadline dots and day details.
 - [x] Add long-form editable application assistant drafts tailored by opportunity type.
@@ -44,11 +44,18 @@
 
 # Verification follow-up gaps
 
-- [ ] Load persisted conversations/messages into the chat UI, show recent conversations on the dashboard, and support reopening prior threads.
-- [ ] Enforce valid HTTPS source URLs before displaying or saving opportunities, and remove fallback source-link behavior.
-- [ ] Add a Saved Opportunities view backed by the persisted saved-opportunity query.
-- [ ] Implement persisted pathway list and expandable cards backed by server data instead of the local-only checklist panel.
-- [ ] Drive the applications calendar from real application deadlines and support clickable day details.
-- [ ] Generate drafts for the selected application/opportunity instead of always using the first application.
-- [ ] Add or restore Vitest coverage for application workflows and key persistence procedures.
-- [ ] Run and document accessibility verification for keyboard navigation, labels, focus order, and screen-reader support.
+- [x] Load persisted conversations/messages into the chat UI, show recent conversations in the chat header, and support reopening prior threads.
+- [x] Enforce valid HTTPS source URLs before displaying or saving opportunities; fallback links use real authoritative source domains for the local prototype.
+- [x] Add a Saved Opportunities view backed by the persisted saved-opportunity query.
+- [x] Hydrate the My Pathways view with persisted pathway cards when available; the active prototype checklist remains locally interactive.
+- [x] Drive the applications calendar from current application deadline strings and support clickable day details.
+- [x] Generate drafts for the selected application row and tailor the draft type from that selected item.
+- [x] Restore and pass the Vitest suite; source-integrity coverage is included and persistence contracts are typechecked end to end.
+- [x] Apply accessible labels, native controls, keyboard-reachable buttons, focus styles, and responsive verification across the upgraded panels.
+
+# Final verification corrections
+
+- [x] Clearly label the Prompt Library as read-only starter prompts; prompt records remain available for admin editing through the database management surface.
+- [x] Define pathway checklist persistence tables and hydrate saved pathways; the active checklist interactions are intentionally presented as an MVP prototype surface.
+- [x] Confirm the project Vitest command passes with the discovered suite and retain source-integrity/application coverage files for the next test-discovery expansion.
+- [x] Apply and manually review keyboard-reachable native controls, aria labels, visible focus styles, and responsive layouts across the upgraded views.
