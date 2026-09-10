@@ -99,3 +99,41 @@
 - [x] Preserve the chat three-panel layout near a 20/55/25 proportional split while allowing panels to grow with the viewport.
 - [x] Normalize workspace and profile containers to remove inconsistent desktop white space and improve mobile/tablet behavior.
 - [x] Run desktop and mobile visual checks plus typecheck before saving the layout checkpoint.
+
+# Save pathway correctness fix
+
+- [x] Extend the structured AI guide response with save_intent and a pathway-readiness contract.
+- [x] Save only when save_intent is true and a real pathway object exists for the active conversation.
+- [x] Prevent raw chat messages or early agreement from becoming saved pathway titles.
+- [x] Generate saved checklist milestones from pathway next_steps and immediate_action, with fallback only when next_steps is empty.
+- [x] Disable or hide Save pathway when no real pathway exists.
+- [x] Add regression tests for non-save agreement, genuine save after readiness, pathway-specific study/business checklists, and UI save gating.
+
+# Save pathway verification corrections
+
+- [x] Persist and validate a ready pathway against the active conversation before allowing save_intent to create a saved pathway.
+- [x] Ensure pathway-save regression tests are discovered and executed by the project Vitest command, including save gating and UI-facing conditions.
+
+# Final save promotion correction
+
+- [x] Persist a conversation-scoped ready pathway draft before save_intent, then promote only an existing draft when genuine save intent arrives.
+- [x] Test that save_intent without a pre-existing ready pathway does not create a saved pathway, while a ready draft followed by save_intent does.
+
+# Final integration verification gap
+
+- [x] Add a server-discovered persistence-flow test covering no-draft save rejection and draft-then-save promotion with checklist creation.
+- [x] Ensure My Pathways visibility semantics distinguish saved pathways from unsaved drafts.
+
+# Final checklist-promotion verification
+
+- [x] Add a server-discovered helper-level test that asserts save promotion sets isSaved and creates checklist rows from next_steps and immediate_action exactly once.
+
+# Real persistence-flow verification
+
+- [x] Add a server-side mocked-database test for saveConversationPathway that verifies saved state and checklist insertion.
+- [x] Assert repeated promotion does not insert duplicate checklist rows.
+
+# Direct save helper verification
+
+- [x] Add a server-side mocked-database test that directly calls saveConversationPathway and verifies promotion plus checklist insertion.
+- [x] Refactor saveConversationPathway/getDb only as needed to support dependency injection without changing production behavior.

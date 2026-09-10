@@ -4,14 +4,16 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { isPathwayReady, shouldPersistPathway } from "../shared/pathwaySave";
 import { adminUpdateOpportunity, adminListOpportunities } from "./db";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => { if (ctx.user.role !== "admin") throw new Error("Admin access required"); return next(); });
-import { addMessage, createApplication, createConversation, listApplications, updateApplication, deleteApplication, listChecklistItems, listConversations, listMessages, listOpportunities, listPathways, listPromptLibrary, listSavedOpportunities, toggleSavedOpportunity, updateChecklist, upsertProfile, getProfile, searchLiveOpportunities, createPersonalisedPathway } from "./db";
+import { addMessage, createApplication, createConversation, listApplications, updateApplication, deleteApplication, listChecklistItems, listConversations, listMessages, listOpportunities, listPathways, listPromptLibrary, listSavedOpportunities, toggleSavedOpportunity, updateChecklist, upsertProfile, getProfile, searchLiveOpportunities, upsertPersonalisedPathwayDraft, saveConversationPathway } from "./db";
 
 const profileInput = z.object({ country: z.string().default("South Africa"), education: z.string().optional(), province: z.string().optional(), goal: z.string().optional(), interests: z.string().optional(), skills: z.string().optional(), experience: z.string().optional(), location: z.string().optional(), constraints: z.string().optional(), resources: z.string().optional() });
 const applicationInput = z.object({ title: z.string().min(2), organisation: z.string().min(2), type: z.enum(["Study", "Work", "Skills", "Business", "Other"]), dateApplied: z.date().optional(), deadlineDate: z.date().optional(), status: z.enum(["Not started", "Applied", "Interview", "Waiting", "Accepted", "Not this time", "Withdrawn"]).optional(), notes: z.string().optional(), linkedPathwayId: z.number().optional(), linkedOpportunityId: z.number().optional() });
 const historyInput = z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() }));
+const pathwayResponseSchema = { type: "object", properties: { recommended_direction: { type: "string" }, goal: { type: "string" }, education: { type: "string" }, interests_or_skills: { type: "string" }, province: { type: "string" }, constraint: { type: "string" }, reasons: { type: "string" }, next_steps: { type: "array", items: { type: "string" } }, immediate_action: { type: "string" } }, required: ["recommended_direction", "goal", "education", "interests_or_skills", "province", "constraint", "reasons", "next_steps", "immediate_action"], additionalProperties: false } as const;
 
 export const appRouter = router({
   system: systemRouter,
@@ -34,8 +36,21 @@ export const appRouter = router({
   guide: router({
     respond: protectedProcedure.input(z.object({ profile: z.string(), history: historyInput, message: z.string(), conversationId: z.number().optional() })).mutation(async ({ ctx, input }) => {
       if (input.conversationId) await addMessage(ctx.user.id, input.conversationId, "user", input.message);
-      const response = await invokeLLM({ messages: [{ role: "system", content: "You are PathFinder, a warm South African youth career guide. Ask only one question at a time. Use Grade 10 reading level, stay practical and encouraging, never diagnose, never guarantee outcomes, and never invent an institution or opportunity. Recommend only grounded directions and explain why. Always finish with one small next action when enough context exists." }, { role: "user", content: `Profile context: ${input.profile}\nConversation so far: ${JSON.stringify(input.history)}\nNew message: ${input.message}` }] });
-      const content = response.choices?.[0]?.message?.content; const message = typeof content === "string" ? content : "I’m listening. Tell me a little more about what you want to explore."; if (input.conversationId) await addMessage(ctx.user.id, input.conversationId, "assistant", message); const shouldCreatePathway = input.message.trim().length >= 12 && input.history.length >= 1; const pathway = shouldCreatePathway ? await createPersonalisedPathway(ctx.user.id, input.profile, input.message, message) : null; return { message, pathway };
+      const response = await invokeLLM({ messages: [{ role: "system", content: "You are PathFinder, a warm South African youth career guide. Ask only one question at a time. Use Grade 10 reading level, stay practical and encouraging, never diagnose, never guarantee outcomes, and never invent an institution or opportunity. Return only JSON matching the schema. Set pathway to a real object only when the readiness bar is met: goal, education, interests or skills, province, and main constraint are all known from the profile or conversation. Otherwise pathway must be null. Set save_intent true only when the user's meaning clearly expresses intent to save, keep, record, or choose the current pathway. Do not set it for thanks, okay, general agreement, or continued exploration. When save_intent is true without a ready pathway, explain that a little more context is needed." }, { role: "user", content: `Profile context: ${input.profile}\nConversation so far: ${JSON.stringify(input.history)}\nNew message: ${input.message}` }], response_format: { type: "json_schema", json_schema: { name: "pathfinder_guide_response", strict: true, schema: { type: "object", properties: { reply: { type: "string" }, profile_updates: { type: "object", additionalProperties: { type: "string" } }, pathway: { anyOf: [{ ...pathwayResponseSchema }, { type: "null" }] }, save_intent: { type: "boolean" } }, required: ["reply", "profile_updates", "pathway", "save_intent"], additionalProperties: false } } } });
+      const content = response.choices?.[0]?.message?.content; let parsed: any = null; try { parsed = typeof content === "string" ? JSON.parse(content) : null; } catch { parsed = null; }
+      const message = typeof parsed?.reply === "string" ? parsed.reply : "I’m listening. Tell me a little more about what you want to explore.";
+      if (input.conversationId) await addMessage(ctx.user.id, input.conversationId, "assistant", message);
+      const ready = isPathwayReady(parsed?.pathway);
+      const saveIntent = Boolean(parsed?.save_intent);
+      const pathwayDraft = ready ? parsed.pathway : null;
+      let pathway = null;
+      if (input.conversationId && ready) {
+        if (saveIntent && shouldPersistPathway(saveIntent, parsed.pathway)) pathway = await saveConversationPathway(ctx.user.id, input.conversationId);
+        else if (!saveIntent) await upsertPersonalisedPathwayDraft(ctx.user.id, input.conversationId, parsed.pathway, message);
+      }
+      const saveMessage = saveIntent && ready && !pathway ? "I have a ready direction, but I need to see it established in this conversation before I can save it. Keep exploring for one more turn, then ask me to save it." : message;
+      const exposedPathwayDraft = saveIntent ? (pathway ? pathwayDraft : null) : pathwayDraft;
+      return { message: saveIntent && !ready ? `${message} Once we have your goal, education, interests or skills, province, and main constraint, I can save a real pathway for you.` : saveMessage, pathway, pathwayDraft: input.conversationId ? exposedPathwayDraft : null, saveIntent, pathwayReady: ready && Boolean(input.conversationId) && (!saveIntent || Boolean(pathway)) };
     }),
   }),
   drafts: router({
